@@ -1,0 +1,247 @@
+import { StyleSheet } from 'react-native';
+import { Colors, FontSize, Spacing, Radius, Shadow } from './theme';
+
+export default StyleSheet.create({
+  safe: { flex: 1, backgroundColor: Colors.bgSecondary },
+  container: { flex: 1 },
+
+  // ── Header ──
+  header: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    justifyContent:    'space-between',
+    paddingHorizontal: Spacing.lg,
+    paddingTop:        Spacing.md,
+    paddingBottom:     Spacing.md,
+    backgroundColor:   Colors.bgSecondary,
+  },
+  headerTitle:    { fontSize: FontSize['2xl'], fontWeight: '800', color: Colors.navy },
+  headerSubtitle: { fontSize: 11, color: Colors.slate, marginTop: 2 },
+  headerBtn: {
+    width:           40,
+    height:          40,
+    borderRadius:    Radius.sm,
+    backgroundColor: Colors.teal,
+    alignItems:      'center',
+    justifyContent:  'center',
+    ...Shadow.teal,
+  },
+
+  // ── Section ──
+  section: { marginHorizontal: Spacing.lg, marginTop: Spacing.lg },
+  sectionLabel: {
+    fontSize:      11,
+    fontWeight:    '700',
+    color:         Colors.teal,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginBottom:  Spacing.sm,
+  },
+  card: {
+    backgroundColor: Colors.bgWhite,
+    borderRadius:    Radius.lg,
+    overflow:        'hidden',
+    ...Shadow.sm,
+  },
+
+  // ── Avatar ──
+  avatarRow: {
+    flexDirection:   'row',
+    alignItems:      'center',
+    padding:         Spacing.lg,
+    gap:             Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  avatarCircle: {
+    width:          60,
+    height:         60,
+    borderRadius:   30,
+    alignItems:     'center',
+    justifyContent: 'center',
+  },
+  avatarInitials: { color: '#fff', fontSize: 22, fontWeight: '800' },
+  avatarInfo:     { flex: 1 },
+  avatarName:     { fontSize: FontSize.lg, fontWeight: '700', color: Colors.navy },
+  avatarEmail:    { fontSize: FontSize.sm, color: Colors.slate, marginTop: 2 },
+  avatarBadge: {
+    borderRadius:      Radius.sm,
+    paddingVertical:   3,
+    paddingHorizontal: Spacing.sm,
+    alignSelf:         'flex-start',
+    marginTop:         4,
+  },
+  avatarBadgeText: { fontSize: 11, fontWeight: '700' },
+
+  // ── Field ──
+  fieldRow: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical:   12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  fieldLabel: { fontSize: 11, color: Colors.slate, fontWeight: '600', marginBottom: 4 },
+  fieldInput: { fontSize: FontSize.md, color: Colors.navy, fontWeight: '500', paddingVertical: 0 },
+  fieldInputError: { borderBottomWidth: 1, borderBottomColor: Colors.error },
+  fieldError:      { fontSize: 11, color: Colors.error, marginTop: 3 },
+  fieldDropdown:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  userTypeBadge:   { paddingVertical: 4, paddingHorizontal: 10, borderRadius: Radius.sm },
+  userTypeBadgeText: { fontSize: FontSize.sm, fontWeight: '700', color: '#fff' },
+
+  // ── Permission Note ──
+  permNote: {
+    marginHorizontal: Spacing.lg,
+    marginTop:        Spacing.sm,
+    backgroundColor:  '#FEF9C3',
+    borderRadius:     Radius.sm,
+    padding:          Spacing.sm,
+    flexDirection:    'row',
+    alignItems:       'flex-start',
+    gap:              6,
+  },
+  permNoteText: { fontSize: 11, color: '#92400E', flex: 1, lineHeight: 16 },
+
+  // ── Toggle Row ──
+  toggleRow: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical:   13,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+    gap:               Spacing.md,
+  },
+  toggleIcon: {
+    width:           36,
+    height:          36,
+    borderRadius:    10,
+    backgroundColor: Colors.tealLight,
+    alignItems:      'center',
+    justifyContent:  'center',
+  },
+  toggleInfo:     { flex: 1 },
+  toggleTitle:    { fontSize: FontSize.sm, fontWeight: '600', color: Colors.navy },
+  toggleSubtitle: { fontSize: 11, color: Colors.slate, marginTop: 1 },
+  toggle: {
+    width:          44,
+    height:         24,
+    borderRadius:   12,
+    padding:        2,
+    justifyContent: 'center',
+  },
+  toggleThumb: {
+    width:        20,
+    height:       20,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    shadowColor:  '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation:    2,
+  },
+
+  // ── Font Size ──
+  fontSizeRow:   { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
+  fontSizeLabel: { fontSize: FontSize.sm, fontWeight: '600', color: Colors.navy, marginBottom: Spacing.sm },
+  fontSizeBtns:  { flexDirection: 'row', gap: Spacing.sm },
+  fontSizeBtn: {
+    paddingVertical:   7,
+    paddingHorizontal: Spacing.lg,
+    borderRadius:      Radius.full,
+    borderWidth:       1.5,
+    borderColor:       Colors.border,
+    backgroundColor:   Colors.bgSecondary,
+  },
+  fontSizeBtnActive:     { backgroundColor: Colors.teal, borderColor: Colors.teal },
+  fontSizeBtnText:       { fontSize: FontSize.sm, fontWeight: '600', color: Colors.slate },
+  fontSizeBtnTextActive: { color: '#fff' },
+
+  // ── Feedback ──
+  feedbackField: {
+    marginHorizontal: Spacing.lg,
+    marginTop:        Spacing.sm,
+    backgroundColor:  Colors.bgWhite,
+    borderRadius:     Radius.md,
+    borderWidth:      1.5,
+    borderColor:      Colors.border,
+    padding:          Spacing.md,
+    fontSize:         FontSize.sm,
+    color:            Colors.navy,
+    minHeight:        90,
+    textAlignVertical: 'top',
+    ...Shadow.sm,
+  },
+  socialRow: {
+    flexDirection:  'row',
+    justifyContent: 'center',
+    gap:            Spacing.md,
+    marginTop:      Spacing.sm,
+    marginHorizontal: Spacing.lg,
+  },
+  socialBtn: {
+    width:          44,
+    height:         44,
+    borderRadius:   22,
+    alignItems:     'center',
+    justifyContent: 'center',
+  },
+  submitBtn: {
+    marginHorizontal: Spacing.lg,
+    marginTop:        Spacing.sm,
+    backgroundColor:  Colors.teal,
+    borderRadius:     Radius.md,
+    paddingVertical:  14,
+    alignItems:       'center',
+    ...Shadow.teal,
+  },
+  submitBtnText: { color: '#fff', fontWeight: '700', fontSize: FontSize.lg },
+
+  // ── App Info ──
+  infoRow: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical:   12,
+    gap:               Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  infoIcon: {
+    width:           36,
+    height:          36,
+    borderRadius:    10,
+    backgroundColor: Colors.tealLight,
+    alignItems:      'center',
+    justifyContent:  'center',
+  },
+  infoText:     { flex: 1 },
+  infoTitle:    { fontSize: FontSize.sm, fontWeight: '600', color: Colors.navy },
+  infoSubtitle: { fontSize: 11, color: Colors.slate, marginTop: 1, lineHeight: 16 },
+
+  // ── Account Actions ──
+  actionRow: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical:   14,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+    gap:               Spacing.md,
+  },
+  actionIcon: {
+    width:          36,
+    height:         36,
+    borderRadius:   10,
+    alignItems:     'center',
+    justifyContent: 'center',
+  },
+  actionText: { flex: 1, fontSize: FontSize.md, fontWeight: '600' },
+  deleteBtn: {
+    paddingVertical:   6,
+    paddingHorizontal: Spacing.md,
+    borderRadius:      Radius.sm,
+    backgroundColor:   Colors.error,
+  },
+  deleteBtnText: { color: '#fff', fontSize: FontSize.sm, fontWeight: '700' },
+});
