@@ -57,21 +57,20 @@ export default StyleSheet.create({
     fontWeight: '700',
   },
 
-  // ── Search ──
+  // ── Search (floating pill, Google Maps style) ──
   searchWrap: {
     marginHorizontal: Spacing.lg,
+    marginTop:        Spacing.sm,
     marginBottom:     Spacing.sm,
   },
   searchBar: {
     flexDirection:     'row',
     alignItems:        'center',
     backgroundColor:   Colors.bgWhite,
-    borderRadius:      Radius.md,
-    paddingVertical:   11,
+    borderRadius:      Radius.full,
+    paddingVertical:   12,
     paddingHorizontal: Spacing.md,
-    borderWidth:       1.5,
-    borderColor:       Colors.tealLight,
-    ...Shadow.sm,
+    ...Shadow.lg,
   },
   searchInput: {
     flex:       1,
@@ -85,7 +84,7 @@ export default StyleSheet.create({
   pillsRow: {
     flexDirection:     'row',
     paddingHorizontal: Spacing.lg,
-    marginBottom:      Spacing.sm,
+    paddingVertical:   Spacing.sm,
     flexWrap:          'wrap',
     gap:               Spacing.sm,
   },
@@ -125,77 +124,13 @@ export default StyleSheet.create({
     flex:       1,
   },
 
-  // ── Map ──
-  mapWrap: {
-    flex:             1,
-    marginHorizontal: Spacing.lg,
-    marginBottom:     Spacing.sm,
-    borderRadius:     Radius.xl,
-    overflow:         'hidden',
-    minHeight:        400,
-    ...Shadow.lg,
-  },
-  map: { flex: 1 },
-
-  // ── Map Overlays ──
-  mapBadge: {
-    position:          'absolute',
-    top:               12,
-    left:              12,
-    backgroundColor:   'rgba(255,255,255,0.95)',
-    borderRadius:      Radius.sm,
-    paddingVertical:   6,
-    paddingHorizontal: 10,
-    flexDirection:     'row',
-    alignItems:        'center',
-    gap:               6,
-    ...Shadow.sm,
-  },
-  mapBadgeText: {
-    fontSize:   11,
-    color:      Colors.slate,
-    fontWeight: '600',
-  },
-  mapBadgeBold: {
-    color:      Colors.navy,
-    fontWeight: '800',
-  },
   locateBtn: {
-    position:        'absolute',
-    bottom:          12,
-    right:           12,
-    width:           40,
-    height:          40,
-    borderRadius:    20,
+    width:           44,
+    height:          44,
+    borderRadius:    22,
     backgroundColor: Colors.bgWhite,
     alignItems:      'center',
     justifyContent:  'center',
     ...Shadow.md,
-  },
-  pinchHint: {
-    position:          'absolute',
-    bottom:            12,
-    left:              12,
-    backgroundColor:   'rgba(255,255,255,0.9)',
-    borderRadius:      Radius.sm,
-    paddingVertical:   5,
-    paddingHorizontal: 10,
-    flexDirection:     'row',
-    alignItems:        'center',
-    gap:               5,
-  },
-  pinchHintText: {
-    fontSize: 11,
-    color:    Colors.slate,
-  },
-
-  // ── Disclaimer ──
-  disclaimer: {
-    textAlign:         'center',
-    fontSize:          11,
-    color:             Colors.slate,
-    paddingHorizontal: Spacing.lg,
-    paddingBottom:     Spacing.sm,
-    lineHeight:        16,
   },
 });

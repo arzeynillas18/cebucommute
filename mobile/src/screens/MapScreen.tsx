@@ -1,357 +1,902 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StatusBar,
+  StyleSheet,
   Alert,
   ActivityIndicator,
   ScrollView,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import MapView, {
-  Polyline,
-  Marker,
-  PROVIDER_GOOGLE,
-} from 'react-native-maps';
-import * as Location from 'expo-location';
-import { Ionicons } from '@expo/vector-icons';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import MapView, { Polyline, Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import { Platform } from "react-native";
+import * as Location from "expo-location";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import type { TabParamList } from "../types/navigation";
 
-import styles from '../styles/MapScreen.styles';
-import { Colors } from '../styles/theme';
-import { JEEPNEY_ROUTES, CEBU_REGION, JeepneyRoute } from '../constants/routes';
-import { useGeoJSON } from '../hooks/useGeoJSON';
-import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import styles from "../styles/MapScreen.styles";
+import { Colors } from "../styles/theme";
+import { JEEPNEY_ROUTES, CEBU_REGION, JeepneyRoute } from "../constants/routes";
+import { useGeoJSON } from "../hooks/useGeoJSON";
+import { useNetworkStatus } from "../hooks/useNetworkStatus";
 
-// ─── Config ───────────────────────────────────────────────────────────────────
-
-const API_URL = 'http://192.168.0.119:3000'; // Android emulator
-// const API_URL = 'http://localhost:3000'; // iOS simulator
-// const API_URL = 'http://192.168.x.x:3000'; // Real device
-
-// ─── Main Screen ──────────────────────────────────────────────────────────────
+const API_URL =
+  "https://9f0a-2001-fd8-c2d8-eb00-f857-e08f-37f7-2011.ngrok-free.app";
 
 export default function MapScreen() {
   const mapRef = useRef<MapView>(null);
   const { isOnline } = useNetworkStatus();
 
-  const [searchQuery, setSearchQuery]   = useState('');
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [locLoading, setLocLoading]     = useState(false);
-  const [activeRoutes, setActiveRoutes] = useState<string[]>(['01B', '04L', '03A']);
-  const [showPinch, setShowPinch]       = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [locLoading, setLocLoading] = useState(false);
+  const [activeRoutes, setActiveRoutes] = useState<string[]>([]);
+  const [colorKey, setColorKey] = useState(0);
+  const [showPinch, setShowPinch] = useState(true);
   const [nearbyRoutes, setNearbyRoutes] = useState<any[]>([]);
+  const [nearbyVisible, setNearbyVisible] = useState(false);
   const [nearbyLoading, setNearbyLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [routeInstruction, setRouteInstruction] = useState<string | null>(null);
+  const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
+  const [destinationPin, setDestinationPin] = useState<{
+    latitude: number;
+    longitude: number;
+    label: string;
+  } | null>(null);
+  const [originPin, setOriginPin] = useState<{
+    latitude: number;
+    longitude: number;
+    label: string;
+  } | null>(null);
 
   const {
     geoJsonMap,
-    loading:    geoLoading,
+    loading: geoLoading,
     generating,
     getRouteGeoJSON,
+    findNearbyRoutes,
   } = useGeoJSON();
 
-  // ── Get user location + find nearby routes ──
+  useEffect(() => {
+    if (Object.keys(geoJsonMap).length > 0) {
+      setTimeout(() => setColorKey((k) => k + 1), 500);
+    }
+  }, [geoJsonMap]);
+
+  const route = useRoute<RouteProp<TabParamList, "Maps">>();
+  const routeCodeParam = route.params?.routeCode;
+
+  // Auto-activate route from navigation params
+  useEffect(() => {
+    if (route.params?.origin && route.params?.destination) {
+      geocodePins(route.params.origin, route.params.destination);
+    } else {
+      setOriginPin(null);
+      setDestinationPin(null);
+    }
+    if (route.params?.instruction)
+      setRouteInstruction(route.params.instruction);
+    if (route.params?.allRoutes) {
+      const codes = route.params.allRoutes
+        .split(",")
+        .filter((c) => geoJsonMap[c]);
+      if (codes.length > 0) setActiveRoutes(codes);
+    } else if (routeCodeParam && geoJsonMap[routeCodeParam]) {
+      setActiveRoutes([routeCodeParam]);
+      const geo = geoJsonMap[routeCodeParam];
+      if (geo?.geometry?.coordinates?.length > 0) {
+        const allCoords = geo.geometry.coordinates;
+        const lats = allCoords.map(([, lat]) => lat);
+        const lngs = allCoords.map(([lng]) => lng);
+        const minLat = Math.min(...lats),
+          maxLat = Math.max(...lats);
+        const minLng = Math.min(...lngs),
+          maxLng = Math.max(...lngs);
+        mapRef.current?.animateToRegion(
+          {
+            latitude: (minLat + maxLat) / 2,
+            longitude: (minLng + maxLng) / 2,
+            latitudeDelta: (maxLat - minLat) * 1.4,
+            longitudeDelta: (maxLng - minLng) * 1.4,
+          },
+          800,
+        );
+      }
+    }
+  }, [routeCodeParam, geoJsonMap]);
+
+  // ── Get user location ──
   const getUserLocation = async () => {
     setLocLoading(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Enable location to see nearby routes.');
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Denied",
+          "Enable location to see nearby routes.",
+        );
         return;
       }
-
       const loc = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
-
       const coords = {
-        latitude:  loc.coords.latitude,
+        latitude: loc.coords.latitude,
         longitude: loc.coords.longitude,
       };
-
       setUserLocation(coords);
       mapRef.current?.animateToRegion(
         { ...coords, latitudeDelta: 0.03, longitudeDelta: 0.03 },
-        800
+        800,
       );
-
-      // Ask AI for nearby routes
-      findNearbyRoutes(coords.latitude, coords.longitude);
-
+      findNearbyRoutesLocal(coords.latitude, coords.longitude);
     } catch {
-      Alert.alert('Error', 'Could not get your location.');
+      Alert.alert("Error", "Could not get your location.");
     } finally {
       setLocLoading(false);
     }
   };
 
-  // ── AI: Find nearby routes ──
-  const findNearbyRoutes = async (latitude: number, longitude: number) => {
+  // ── Find nearby routes using local geometry ──
+  const findNearbyRoutesLocal = (latitude: number, longitude: number) => {
     setNearbyLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/ai/nearby`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ latitude, longitude }),
-      });
-      const data = await res.json();
-      if (data.success && data.routes?.length > 0) {
-        setNearbyRoutes(data.routes);
-        // Auto-activate nearby routes on map
-        setActiveRoutes(data.routes.map((r: any) => r.code));
-        // Ensure GeoJSON exists for nearby routes
-        for (const route of data.routes) {
-          await getRouteGeoJSON(route.code);
-        }
+      const nearby = findNearbyRoutes(latitude, longitude);
+      if (nearby.length > 0) {
+        setNearbyRoutes(nearby);
+        setNearbyVisible(true);
+        setActiveRoutes(nearby.map((r: any) => r.code));
+        setTimeout(() => setNearbyVisible(false), 6000);
+        mapRef.current?.animateToRegion(
+          { latitude, longitude, latitudeDelta: 0.04, longitudeDelta: 0.04 },
+          800,
+        );
+      } else {
+        setNearbyRoutes([]);
+        Alert.alert(
+          "No routes nearby",
+          "No jeepney routes pass within 150m of your location.\n\nTry moving to a main road.",
+        );
       }
     } catch (err) {
-      console.log('Nearby routes offline — using defaults');
+      console.log("Nearby detection error:", err);
     } finally {
       setNearbyLoading(false);
     }
   };
 
   // ── Search routes ──
-  const handleSearch = async (text: string) => {
+  const handleSearch = (text: string) => {
     setSearchQuery(text);
-    if (!text.trim()) return;
-
-    const matched = JEEPNEY_ROUTES.filter(
-      r =>
-        r.code.toLowerCase().includes(text.toLowerCase()) ||
-        r.origin.toLowerCase().includes(text.toLowerCase()) ||
-        r.dest.toLowerCase().includes(text.toLowerCase())
-    );
-
-    if (matched.length > 0) {
-      setActiveRoutes(matched.map(r => r.code));
-      // Generate GeoJSON for searched route if not cached
-      for (const r of matched) {
-        await getRouteGeoJSON(r.code);
-      }
-      // Animate to first match
-      const geo = geoJsonMap[matched[0].code];
-      if (geo?.geometry?.coordinates?.length > 0) {
-        const [lon, lat] = geo.geometry.coordinates[
-          Math.floor(geo.geometry.coordinates.length / 2)
-        ];
-        mapRef.current?.animateToRegion(
-          { latitude: lat, longitude: lon, latitudeDelta: 0.04, longitudeDelta: 0.04 },
-          800
-        );
-      }
+    if (!text.trim()) {
+      setSuggestions([]);
+      setActiveRoutes([]);
+      return;
     }
+    const availableCodes = Object.keys(geoJsonMap);
+    const q = text.toLowerCase();
+    // Match by route code OR by route name/destination
+    const matched = availableCodes.filter((code) => {
+      if (code.toLowerCase().includes(q)) return true;
+      const props = geoJsonMap[code]?.properties;
+      if (props?.name?.toLowerCase().includes(q)) return true;
+      const r = JEEPNEY_ROUTES.find((x) => x.code === code);
+      if (r?.origin?.toLowerCase().includes(q)) return true;
+      if (r?.dest?.toLowerCase().includes(q)) return true;
+      return false;
+    });
+    setSuggestions(matched);
   };
 
-  // ── Toggle route pill ──
-  const toggleRoute = (code: string) => {
-    setActiveRoutes(prev =>
-      prev.includes(code)
-        ? prev.filter(c => c !== code)
-        : [...prev, code]
-    );
-    // Ensure GeoJSON for toggled route
-    getRouteGeoJSON(code);
+  const selectSuggestion = (code: string) => {
+    setSearchQuery(code);
+    setSuggestions([]);
+    setActiveRoutes([code]);
+    const geo = geoJsonMap[code];
+    if (geo?.geometry?.coordinates?.length > 0) {
+      const allCoords = geo.geometry.coordinates;
+      const lats = allCoords.map(([, lat]) => lat);
+      const lngs = allCoords.map(([lng]) => lng);
+      const minLat = Math.min(...lats),
+        maxLat = Math.max(...lats);
+      const minLng = Math.min(...lngs),
+        maxLng = Math.max(...lngs);
+      mapRef.current?.animateToRegion(
+        {
+          latitude: (minLat + maxLat) / 2,
+          longitude: (minLng + maxLng) / 2,
+          latitudeDelta: (maxLat - minLat) * 1.4,
+          longitudeDelta: (maxLng - minLng) * 1.4,
+        },
+        800,
+      );
+    }
   };
 
   // ── Build polyline coordinates from GeoJSON ──
   const getPolylineCoords = (code: string) => {
     const geo = geoJsonMap[code];
     if (!geo?.geometry?.coordinates) return [];
-    return geo.geometry.coordinates.map(([lon, lat]) => ({
-      latitude:  lat,
+    const coords = geo.geometry.coordinates.map(([lon, lat]) => ({
+      latitude: lat,
       longitude: lon,
     }));
+    return coords;
   };
 
-  const visibleRoutes = JEEPNEY_ROUTES.filter(r => activeRoutes.includes(r.code));
+  const CEBU_LANDMARKS: Record<
+    string,
+    { latitude: number; longitude: number }
+  > = {
+    "carbon market": { latitude: 10.2936, longitude: 123.8978 },
+    carbon: { latitude: 10.2936, longitude: 123.8978 },
+    colon: { latitude: 10.2938, longitude: 123.8987 },
+    "colon street": { latitude: 10.2938, longitude: 123.8987 },
+    ayala: { latitude: 10.3188, longitude: 123.9054 },
+    "ayala center": { latitude: 10.3188, longitude: 123.9054 },
+    "ayala center cebu": { latitude: 10.3188, longitude: 123.9054 },
+    "sm city cebu": { latitude: 10.331, longitude: 123.9182 },
+    "sm city": { latitude: 10.331, longitude: 123.9182 },
+    sm: { latitude: 10.331, longitude: 123.9182 },
+    parkmall: { latitude: 10.3279, longitude: 123.9375 },
+    "it park": { latitude: 10.331, longitude: 123.906 },
+    urgello: { latitude: 10.295, longitude: 123.891 },
+    mandaue: { latitude: 10.3496, longitude: 123.9391 },
+    talamban: { latitude: 10.3676, longitude: 123.9139 },
+    lahug: { latitude: 10.331, longitude: 123.8978 },
+    guadalupe: { latitude: 10.3085, longitude: 123.8807 },
+    tisa: { latitude: 10.285, longitude: 123.878 },
+    bulacao: { latitude: 10.278, longitude: 123.872 },
+    "north bus terminal": { latitude: 10.349, longitude: 123.914 },
+    "south bus terminal": { latitude: 10.292, longitude: 123.882 },
+    pier: { latitude: 10.294, longitude: 123.902 },
+    waterfront: { latitude: 10.315, longitude: 123.912 },
+    mabolo: { latitude: 10.328, longitude: 123.914 },
+    sambag: { latitude: 10.298, longitude: 123.892 },
+    "sambag 1": { latitude: 10.298, longitude: 123.892 },
+    "sambag 2": { latitude: 10.301, longitude: 123.89 },
+    capitol: { latitude: 10.314, longitude: 123.891 },
+    "capitol site": { latitude: 10.314, longitude: 123.891 },
+    "university of san jose": { latitude: 10.296, longitude: 123.901 },
+    "university of visayas": { latitude: 10.297, longitude: 123.899 },
+    uv: { latitude: 10.297, longitude: 123.899 },
+    "cebu doctors": { latitude: 10.338, longitude: 123.911 },
+    cicc: { latitude: 10.335, longitude: 123.917 },
+    banilad: { latitude: 10.345, longitude: 123.905 },
+    apas: { latitude: 10.332, longitude: 123.9 },
+  };
+
+  const geocodePins = async (originText: string, destText: string) => {
+    const originKey = originText.toLowerCase().trim();
+    const destKey = destText.toLowerCase().trim();
+
+    let originCoords = CEBU_LANDMARKS[originKey];
+    let destCoords = CEBU_LANDMARKS[destKey];
+
+    try {
+      if (!originCoords) {
+        const r = await Location.geocodeAsync(
+          `${originText}, Cebu City, Cebu, Philippines`,
+        );
+        if (r.length > 0)
+          originCoords = { latitude: r[0].latitude, longitude: r[0].longitude };
+      }
+      if (!destCoords) {
+        const r = await Location.geocodeAsync(
+          `${destText}, Cebu City, Cebu, Philippines`,
+        );
+        if (r.length > 0)
+          destCoords = { latitude: r[0].latitude, longitude: r[0].longitude };
+      }
+    } catch (err) {
+      console.log("Geocoding error:", err);
+    }
+
+    if (originCoords) setOriginPin({ ...originCoords, label: originText });
+    if (destCoords) setDestinationPin({ ...destCoords, label: destText });
+
+    if (originCoords && destCoords) {
+      const lats = [originCoords.latitude, destCoords.latitude];
+      const lngs = [originCoords.longitude, destCoords.longitude];
+      const minLat = Math.min(...lats),
+        maxLat = Math.max(...lats);
+      const minLng = Math.min(...lngs),
+        maxLng = Math.max(...lngs);
+      setTimeout(() => {
+        mapRef.current?.animateToRegion(
+          {
+            latitude: (minLat + maxLat) / 2,
+            longitude: (minLng + maxLng) / 2,
+            latitudeDelta: Math.max((maxLat - minLat) * 1.8, 0.02),
+            longitudeDelta: Math.max((maxLng - minLng) * 1.8, 0.02),
+          },
+          800,
+        );
+      }, 600);
+    }
+  };
 
   return (
-    <SafeAreaView style={[styles.safe, { flex: 1 }]} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.bgPrimary} />
+    <View style={{ flex: 1 }}>
+      <StatusBar
+        barStyle="dark-content"
+        translucent
+        backgroundColor="transparent"
+      />
 
-      {/* ── Fixed top section ── */}
-      <View>
-        {/* ── Header ── */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Jeepney Map</Text>
-          <TouchableOpacity style={styles.headerBtn}>
-            <Ionicons name="options-outline" size={18} color="#fff" />
-          </TouchableOpacity>
-        </View>
-
-      {/* ── Offline Banner — only shows when no internet ── */}
-      {!isOnline && (
-        <View style={styles.modeBanner}>
-          <View style={styles.modeDot} />
-          <Text style={styles.modeBannerText}>Offline Mode Active</Text>
-        </View>
-      )}
-
-      {/* ── Search Bar ── */}
-      <View style={styles.searchWrap}>
-        <View style={styles.searchBar}>
-          <Ionicons name="search-outline" size={18} color={Colors.teal} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search Route: 01B, Carbon, Ayala..."
-            placeholderTextColor={Colors.slateLight}
-            value={searchQuery}
-            onChangeText={handleSearch}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => { setSearchQuery(''); setActiveRoutes(['01B', '04L', '03A']); }}>
-              <Ionicons name="close-circle" size={18} color={Colors.slateLight} />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-
-      </View>
-
-      {/* ── Route Pills ── */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.pillsRow}
+      {/* ── Map fills entire screen — rendered first so UI floats above ── */}
+      <MapView
+        ref={mapRef}
+        key={colorKey}
+        style={StyleSheet.absoluteFillObject}
+        provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
+        initialRegion={CEBU_REGION}
+        showsUserLocation={!!userLocation}
+        showsMyLocationButton={false}
+        showsCompass={false}
+        onTouchStart={() => setShowPinch(false)}
       >
-        {JEEPNEY_ROUTES.map(route => {
-          const isActive = activeRoutes.includes(route.code);
-          const isGen    = generating === route.code;
+        {activeRoutes.map((code) => {
+          const coords = getPolylineCoords(code);
+          if (coords.length === 0) return null;
+          const color =
+            geoJsonMap[code]?.properties?.color ||
+            JEEPNEY_ROUTES.find((x) => x.code === code)?.color ||
+            Colors.teal;
           return (
-            <TouchableOpacity
-              key={route.id}
-              style={[styles.pill, { backgroundColor: isActive ? route.color : Colors.borderLight }]}
-              onPress={() => toggleRoute(route.code)}
-              activeOpacity={0.8}
-            >
-              {isGen
-                ? <ActivityIndicator size="small" color={isActive ? '#fff' : route.color} />
-                : <View style={[styles.pillDot, { backgroundColor: isActive ? '#fff' : route.color }]} />
-              }
-              <Text style={[styles.pillText, { color: isActive ? '#fff' : Colors.slate }]}>
-                {route.code}
-              </Text>
-            </TouchableOpacity>
+            <Polyline
+              key={code}
+              coordinates={coords}
+              strokeColor={color}
+              strokeWidth={4}
+              lineCap="round"
+              lineJoin="round"
+              tappable={true}
+              onPress={() => setSelectedRoute(code)}
+            />
           );
         })}
-      </ScrollView>
-
-      {/* ── AI Generating Banner ── */}
-      {(geoLoading || nearbyLoading) && (
-        <View style={styles.aiLoadingWrap}>
-          <ActivityIndicator size="small" color={Colors.teal} />
-          <Text style={styles.aiLoadingText}>
-            {nearbyLoading
-              ? '🤖 AI is finding routes near you...'
-              : '🤖 AI is generating route maps...'
-            }
-          </Text>
-        </View>
-      )}
-
-      {/* ── Nearby Routes Banner ── */}
-      {nearbyRoutes.length > 0 && !nearbyLoading && (
-        <View style={styles.aiLoadingWrap}>
-          <Ionicons name="location" size={16} color={Colors.tealDark} />
-          <Text style={styles.aiLoadingText}>
-            {nearbyRoutes.length} routes near you: {nearbyRoutes.map((r: any) => r.code).join(', ')}
-          </Text>
-        </View>
-      )}
-
-      {/* ── Map ── */}
-      <View style={styles.mapWrap}>
-        <MapView
-          ref={mapRef}
-          style={styles.map}
-          provider={PROVIDER_GOOGLE}
-          initialRegion={CEBU_REGION}
-          showsUserLocation={!!userLocation}
-          showsMyLocationButton={false}
-          showsCompass
-          onTouchStart={() => setShowPinch(false)}
-        >
-          {/* Route Polylines from AI-generated GeoJSON */}
-          {visibleRoutes.map(route => {
-            const coords = getPolylineCoords(route.code);
-            if (coords.length === 0) return null;
-            return (
-              <Polyline
-                key={route.id}
-                coordinates={coords}
-                strokeColor={route.color}
-                strokeWidth={4}
+        {activeRoutes.map((code) => {
+          const coords = getPolylineCoords(code);
+          if (coords.length < 2) return null;
+          const r = JEEPNEY_ROUTES.find((x) => x.code === code);
+          const color = r?.color || Colors.teal;
+          return (
+            <React.Fragment key={`markers-${code}`}>
+              <Marker
+                coordinate={coords[0]}
+                pinColor={color}
+                title={`${code} — Start`}
+                onPress={() => setSelectedRoute(code)}
               />
-            );
-          })}
-
-          {/* Start / End Markers */}
-          {visibleRoutes.map(route => {
-            const coords = getPolylineCoords(route.code);
-            if (coords.length < 2) return null;
-            return (
-              <React.Fragment key={`markers-${route.id}`}>
-                <Marker
-                  coordinate={coords[0]}
-                  pinColor={route.color}
-                  title={`${route.code} — Start`}
-                  description={`${route.origin} to ${route.dest}`}
-                />
-                <Marker
-                  coordinate={coords[coords.length - 1]}
-                  pinColor={route.color}
-                  title={`${route.code} — End`}
-                  description={`${route.origin} to ${route.dest}`}
-                />
-              </React.Fragment>
-            );
-          })}
-
-          {/* User location dot */}
-          {userLocation && (
-            <Marker coordinate={userLocation} title="You are here">
-              <View style={{
-                width: 20, height: 20, borderRadius: 10,
+              <Marker
+                coordinate={coords[coords.length - 1]}
+                pinColor={color}
+                title={`${code} — End`}
+                onPress={() => setSelectedRoute(code)}
+              />
+            </React.Fragment>
+          );
+        })}
+        {userLocation && (
+          <Marker coordinate={userLocation} title="You are here">
+            <View
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: 10,
                 backgroundColor: Colors.info,
-                borderWidth: 3, borderColor: '#fff',
+                borderWidth: 3,
+                borderColor: "#fff",
                 elevation: 4,
-              }} />
-            </Marker>
-          )}
-        </MapView>
+              }}
+            />
+          </Marker>
+        )}
+        {originPin && (
+          <Marker coordinate={originPin} title={`From: ${originPin.label}`}>
+            <View style={{ alignItems: "center" }}>
+              <View
+                style={{
+                  backgroundColor: Colors.teal,
+                  borderRadius: 20,
+                  padding: 6,
+                  borderWidth: 2,
+                  borderColor: "#fff",
+                  elevation: 4,
+                }}
+              >
+                <Ionicons name="location" size={16} color="#fff" />
+              </View>
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontWeight: "700",
+                  color: Colors.teal,
+                  backgroundColor: "rgba(255,255,255,0.9)",
+                  paddingHorizontal: 4,
+                  borderRadius: 4,
+                  marginTop: 2,
+                }}
+              >
+                {originPin.label}
+              </Text>
+            </View>
+          </Marker>
+        )}
+        {destinationPin && (
+          <Marker
+            coordinate={destinationPin}
+            title={`To: ${destinationPin.label}`}
+          >
+            <View style={{ alignItems: "center" }}>
+              <View
+                style={{
+                  backgroundColor: "#EF4444",
+                  borderRadius: 20,
+                  padding: 6,
+                  borderWidth: 2,
+                  borderColor: "#fff",
+                  elevation: 4,
+                }}
+              >
+                <Ionicons name="flag" size={16} color="#fff" />
+              </View>
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontWeight: "700",
+                  color: "#EF4444",
+                  backgroundColor: "rgba(255,255,255,0.9)",
+                  paddingHorizontal: 4,
+                  borderRadius: 4,
+                  marginTop: 2,
+                }}
+              >
+                {destinationPin.label}
+              </Text>
+            </View>
+          </Marker>
+        )}
+      </MapView>
 
-        {/* Map Data Badge */}
-        <View style={styles.mapBadge}>
-          <Ionicons name="information-circle-outline" size={14} color={Colors.teal} />
-          <Text style={styles.mapBadgeText}>
-            Map Data:{' '}
-            <Text style={styles.mapBadgeBold}>AI Generated • Aug 2025</Text>
-          </Text>
-        </View>
-
-        {/* Pinch Hint */}
-        {showPinch && (
-          <View style={styles.pinchHint}>
-            <Ionicons name="hand-left-outline" size={13} color={Colors.slate} />
-            <Text style={styles.pinchHintText}>Pinch to zoom</Text>
+      {/* ── Floating UI layer ── */}
+      <SafeAreaView
+        style={{ flex: 1 }}
+        edges={["top"]}
+        pointerEvents="box-none"
+      >
+        {/* ── Offline Banner ── */}
+        {!isOnline && (
+          <View style={styles.modeBanner}>
+            <View style={styles.modeDot} />
+            <Text style={styles.modeBannerText}>Offline Mode Active</Text>
           </View>
         )}
 
-        {/* Locate Me Button */}
-        <TouchableOpacity style={styles.locateBtn} onPress={getUserLocation}>
-          {locLoading
-            ? <ActivityIndicator size="small" color={Colors.teal} />
-            : <Ionicons name="locate" size={20} color={Colors.teal} />
-          }
-        </TouchableOpacity>
-      </View>
+        {/* ── Search Bar ── */}
+        <View style={styles.searchWrap}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search-outline" size={18} color={Colors.teal} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search Route: 01B, Carbon, Ayala..."
+              placeholderTextColor={Colors.slateLight}
+              value={searchQuery}
+              onChangeText={handleSearch}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                onPress={() => {
+                  setSearchQuery("");
+                  setActiveRoutes([]);
+                  setSuggestions([]);
+                }}
+              >
+                <Ionicons
+                  name="close-circle"
+                  size={18}
+                  color={Colors.slateLight}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
 
-      {/* ── Disclaimer ── */}
-      <Text style={styles.disclaimer}>
-        Routes AI-generated from Groq. Tap 📍 to find routes near you.
-      </Text>
-    </SafeAreaView>
+        {/* ── Search Dropdown ── */}
+        {suggestions.length > 0 && (
+          <View
+            style={{
+              marginHorizontal: 16,
+              backgroundColor: "#fff",
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: Colors.tealLight,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 6,
+              elevation: 5,
+              zIndex: 999,
+            }}
+          >
+            {suggestions.map((code, i) => {
+              const r = JEEPNEY_ROUTES.find((x) => x.code === code);
+              const props = geoJsonMap[code]?.properties;
+              return (
+                <TouchableOpacity
+                  key={code}
+                  onPress={() => selectSuggestion(code)}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 12,
+                    paddingHorizontal: 14,
+                    borderBottomWidth: i < suggestions.length - 1 ? 1 : 0,
+                    borderBottomColor: Colors.borderLight,
+                    gap: 10,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 8,
+                      backgroundColor: r?.color || props?.color || Colors.teal,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Text
+                      style={{ color: "#fff", fontWeight: "800", fontSize: 11 }}
+                    >
+                      {code}
+                    </Text>
+                  </View>
+                  <View>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "600",
+                        color: Colors.navy,
+                      }}
+                    >
+                      {code}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: Colors.slate }}>
+                      {r ? `${r.origin} → ${r.dest}` : props?.name || ""}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
+
+        {/* ── Route Pills ── */}
+        <View style={{ height: 44 }} pointerEvents="box-none">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.pillsRow}
+            keyboardShouldPersistTaps="handled"
+          >
+            {Object.keys(geoJsonMap).map((code) => {
+              const r = JEEPNEY_ROUTES.find((x) => x.code === code);
+              const color =
+                r?.color || geoJsonMap[code]?.properties?.color || Colors.teal;
+              const isActive = activeRoutes.includes(code);
+              return (
+                <TouchableOpacity
+                  key={code}
+                  style={[
+                    styles.pill,
+                    { backgroundColor: isActive ? color : Colors.borderLight },
+                  ]}
+                  onPress={() => {
+                    setActiveRoutes((prev) =>
+                      prev.includes(code)
+                        ? prev.filter((c) => c !== code)
+                        : [...prev, code],
+                    );
+                    const geo = geoJsonMap[code];
+                    if (geo?.geometry?.coordinates?.length > 0) {
+                      const allCoords = geo.geometry.coordinates;
+                      const lats = allCoords.map(([, lat]) => lat);
+                      const lngs = allCoords.map(([lng]) => lng);
+                      const minLat = Math.min(...lats),
+                        maxLat = Math.max(...lats);
+                      const minLng = Math.min(...lngs),
+                        maxLng = Math.max(...lngs);
+                      mapRef.current?.animateToRegion(
+                        {
+                          latitude: (minLat + maxLat) / 2,
+                          longitude: (minLng + maxLng) / 2,
+                          latitudeDelta: (maxLat - minLat) * 1.4,
+                          longitudeDelta: (maxLng - minLng) * 1.4,
+                        },
+                        800,
+                      );
+                    }
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <View
+                    style={[
+                      styles.pillDot,
+                      { backgroundColor: isActive ? "#fff" : color },
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.pillText,
+                      { color: isActive ? "#fff" : Colors.slate },
+                    ]}
+                  >
+                    {code}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        {/* ── Loading Banner ── */}
+        {(geoLoading || nearbyLoading) && (
+          <View style={styles.aiLoadingWrap}>
+            <ActivityIndicator size="small" color={Colors.teal} />
+            <Text style={styles.aiLoadingText}>
+              {nearbyLoading
+                ? "📍 Finding routes near you..."
+                : "🗺️ Loading route maps..."}
+            </Text>
+          </View>
+        )}
+
+        {/* ── Locate Me Button — bottom right ── */}
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "flex-end",
+            alignItems: "flex-end",
+            paddingRight: 16,
+            paddingBottom: 100,
+          }}
+          pointerEvents="box-none"
+        >
+          <TouchableOpacity style={styles.locateBtn} onPress={getUserLocation}>
+            {locLoading ? (
+              <ActivityIndicator size="small" color={Colors.teal} />
+            ) : (
+              <Ionicons name="locate" size={20} color={Colors.teal} />
+            )}
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+
+      {/* ── Selected Route Detail Popup ── */}
+      {selectedRoute &&
+        (() => {
+          const r = JEEPNEY_ROUTES.find((x) => x.code === selectedRoute);
+          const props = geoJsonMap[selectedRoute]?.properties;
+          const color = r?.color || props?.color || Colors.teal;
+          return (
+            <View
+              style={{
+                position: "absolute",
+                bottom: 80,
+                left: 16,
+                right: 16,
+                backgroundColor: "rgba(255,255,255,0.97)",
+                borderRadius: 16,
+                padding: 14,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.15,
+                shadowRadius: 8,
+                elevation: 6,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 8,
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                >
+                  <View
+                    style={{
+                      backgroundColor: color,
+                      borderRadius: 8,
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                    }}
+                  >
+                    <Text
+                      style={{ color: "#fff", fontWeight: "800", fontSize: 14 }}
+                    >
+                      {selectedRoute}
+                    </Text>
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "700",
+                      color: Colors.navy,
+                    }}
+                  >
+                    {r?.origin || props?.name} → {r?.dest || ""}
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={() => setSelectedRoute(null)}>
+                  <Ionicons
+                    name="close-circle"
+                    size={20}
+                    color={Colors.slate}
+                  />
+                </TouchableOpacity>
+              </View>
+              <View style={{ flexDirection: "row", gap: 16 }}>
+                <View
+                  style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+                >
+                  <Ionicons name="cash-outline" size={14} color={Colors.teal} />
+                  <Text style={{ fontSize: 13, color: Colors.slate }}>
+                    ₱{r?.fare || props?.fare || 13}
+                  </Text>
+                </View>
+                <View
+                  style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+                >
+                  <Ionicons name="time-outline" size={14} color={Colors.teal} />
+                  <Text style={{ fontSize: 13, color: Colors.slate }}>
+                    {r?.hours || "5:00 AM - 10:00 PM"}
+                  </Text>
+                </View>
+              </View>
+              {r?.notes && (
+                <Text
+                  style={{ fontSize: 12, color: Colors.slate, marginTop: 6 }}
+                >
+                  {r.notes}
+                </Text>
+              )}
+            </View>
+          );
+        })()}
+
+      {/* ── AI Instruction Popup ── */}
+      {routeInstruction && (
+        <View
+          style={{
+            position: "absolute",
+            bottom: selectedRoute ? 210 : 80,
+            left: 16,
+            right: 16,
+            backgroundColor: "rgba(255,255,255,0.97)",
+            borderRadius: 16,
+            padding: 14,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.15,
+            shadowRadius: 8,
+            elevation: 6,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+            }}
+          >
+            <View style={{ flex: 1, flexDirection: "row", gap: 8 }}>
+              <Ionicons name="sparkles-outline" size={16} color={Colors.teal} />
+              <Text
+                style={{
+                  fontSize: 13,
+                  color: Colors.navy,
+                  fontWeight: "600",
+                  flex: 1,
+                }}
+              >
+                {routeInstruction}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={() => setRouteInstruction(null)}>
+              <Ionicons name="close-circle" size={20} color={Colors.slate} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* ── Nearby Routes Banner — floats above everything ── */}
+      {nearbyVisible && nearbyRoutes.length > 0 && (
+        <View
+          style={{
+            position: "absolute",
+            bottom: 80,
+            left: 16,
+            right: 16,
+            backgroundColor: "rgba(255,255,255,0.97)",
+            borderRadius: 16,
+            padding: 14,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.15,
+            shadowRadius: 8,
+            elevation: 6,
+          }}
+        >
+          <Ionicons name="location" size={18} color={Colors.teal} />
+          <View style={{ flex: 1 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 4,
+              }}
+            >
+              <Text
+                style={{ fontSize: 13, fontWeight: "700", color: Colors.navy }}
+              >
+                {nearbyRoutes.length} route{nearbyRoutes.length > 1 ? "s" : ""}{" "}
+                near you
+              </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setNearbyVisible(false);
+                  setActiveRoutes([]);
+                  setNearbyRoutes([]);
+                }}
+              >
+                <Ionicons name="close-circle" size={18} color={Colors.slate} />
+              </TouchableOpacity>
+            </View>
+            {nearbyRoutes.slice(0, 5).map((r: any) => (
+              <TouchableOpacity
+                key={r.code}
+                onPress={() => {
+                  setActiveRoutes([r.code]);
+                  setSearchQuery(r.code);
+                  setNearbyVisible(false);
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "600",
+                    color: r.color,
+                    marginBottom: 2,
+                  }}
+                >
+                  {r.code} — {r.name} ({r.distanceMeters}m)
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
+    </View>
   );
 }

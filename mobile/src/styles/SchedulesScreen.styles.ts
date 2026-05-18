@@ -19,20 +19,19 @@ export default StyleSheet.create({
     backgroundColor:   Colors.bgSecondary,
   },
   headerTitle: {
-    fontSize:           FontSize['2xl'],
-    fontWeight:         '800',
-    color:              Colors.navy,
-    textDecorationLine: 'underline',
-    textDecorationColor: Colors.teal,
+    fontSize:   FontSize['2xl'],
+    fontWeight: '800',
+    color:      Colors.navy,
   },
   headerBtn: {
     width:           40,
     height:          40,
-    borderRadius:    Radius.sm,
-    backgroundColor: Colors.teal,
+    borderRadius:    Radius.full,
+    backgroundColor: Colors.bgWhite,
     alignItems:      'center',
     justifyContent:  'center',
-    ...Shadow.teal,
+    borderWidth:     1,
+    borderColor:     Colors.tealLight,
   },
 
   // ── Search ──
@@ -111,13 +110,14 @@ export default StyleSheet.create({
     paddingVertical:   8,
     paddingHorizontal: Spacing.md,
     borderRadius:      Radius.full,
-    backgroundColor:   Colors.teal,
-    ...Shadow.teal,
+    backgroundColor:   Colors.bgWhite,
+    borderWidth:       1,
+    borderColor:       Colors.tealLight,
   },
   filterBtnText: {
     fontSize:   FontSize.sm,
-    fontWeight: '700',
-    color:      '#fff',
+    fontWeight: '600',
+    color:      Colors.navy,
   },
 
   // ── Schedule Card ──

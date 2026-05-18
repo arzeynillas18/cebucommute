@@ -14,7 +14,7 @@ export type RootStackParamList = {
 
 export type TabParamList = {
   Home:      undefined;
-  Maps:      undefined;
+  Maps:      { routeCode?: string; instruction?: string; destination?: string; origin?: string; allRoutes?: string } | undefined;
   Schedules: undefined;
   Profile:   undefined;
 };

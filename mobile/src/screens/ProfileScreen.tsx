@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,54 +7,74 @@ import {
   ScrollView,
   StatusBar,
   Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+  ImageBackground,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
-import styles from '../styles/ProfileScreen.styles';
-import { Colors } from '../styles/theme';
+import styles from "../styles/ProfileScreen.styles";
+import { Colors } from "../styles/theme";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type UserType = 'Student' | 'Employee' | 'Senior' | 'Tourist';
-type FontSize = 'Small' | 'Medium' | 'Large';
+type UserType = "Student" | "Employee" | "Senior" | "Tourist";
+type FontSize = "Small" | "Medium" | "Large";
 
 const USER_TYPE_COLORS: Record<UserType, string> = {
-  Student:  Colors.student,
+  Student: Colors.student,
   Employee: Colors.employee,
-  Senior:   Colors.senior,
-  Tourist:  Colors.tourist,
+  Senior: Colors.senior,
+  Tourist: Colors.tourist,
 };
 
-const USER_TYPES: UserType[] = ['Student', 'Employee', 'Senior', 'Tourist'];
+const USER_TYPES: UserType[] = ["Student", "Employee", "Senior", "Tourist"];
 
-const API_URL = 'http://10.0.2.2:3000';
-// const API_URL = 'http://localhost:3000'; // iOS simulator
+const API_URL = "http://192.168.254.107:3000";
+// const API_URL = 'http://192.168.0.106:3000'; // iOS simulator
 // const API_URL = 'http://192.168.x.x:3000'; // Real device
 
 // ─── Toggle ───────────────────────────────────────────────────────────────────
 
-const Toggle = ({ value, onToggle }: { value: boolean; onToggle: () => void }) => (
+const Toggle = ({
+  value,
+  onToggle,
+}: {
+  value: boolean;
+  onToggle: () => void;
+}) => (
   <TouchableOpacity
     onPress={onToggle}
     activeOpacity={0.8}
-    style={[styles.toggle, { backgroundColor: value ? Colors.teal : '#CBD5E1' }]}
+    style={[
+      styles.toggle,
+      { backgroundColor: value ? Colors.teal : "#CBD5E1" },
+    ]}
   >
-    <View style={[styles.toggleThumb, { alignSelf: value ? 'flex-end' : 'flex-start' }]} />
+    <View
+      style={[
+        styles.toggleThumb,
+        { alignSelf: value ? "flex-end" : "flex-start" },
+      ]}
+    />
   </TouchableOpacity>
 );
 
 // ─── Toggle Row ───────────────────────────────────────────────────────────────
 
 const ToggleRow = ({
-  icon, title, subtitle, value, onToggle, last = false,
+  icon,
+  title,
+  subtitle,
+  value,
+  onToggle,
+  last = false,
 }: {
-  icon:      keyof typeof Ionicons.glyphMap;
-  title:     string;
-  subtitle:  string;
-  value:     boolean;
-  onToggle:  () => void;
-  last?:     boolean;
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  subtitle: string;
+  value: boolean;
+  onToggle: () => void;
+  last?: boolean;
 }) => (
   <View style={[styles.toggleRow, last && { borderBottomWidth: 0 }]}>
     <View style={styles.toggleIcon}>
@@ -71,50 +91,59 @@ const ToggleRow = ({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function ProfileScreen() {
-  const [name, setName]                       = useState('');
-  const [email, setEmail]                     = useState('name@example.com');
-  const [emailError, setEmailError]           = useState('');
-  const [userType, setUserType]               = useState<UserType>('Student');
-  const [showTypeMenu, setShowTypeMenu]       = useState(false);
-  const [offlineMaps, setOfflineMaps]         = useState(true);
-  const [fareAlerts, setFareAlerts]           = useState(true);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("name@example.com");
+  const [emailError, setEmailError] = useState("");
+  const [userType, setUserType] = useState<UserType>("Student");
+  const [showTypeMenu, setShowTypeMenu] = useState(false);
+  const [offlineMaps, setOfflineMaps] = useState(true);
+  const [fareAlerts, setFareAlerts] = useState(true);
   const [scheduleChanges, setScheduleChanges] = useState(true);
-  const [travelTips, setTravelTips]           = useState(true);
-  const [darkMode, setDarkMode]               = useState(false);
-  const [fontSize, setFontSize]               = useState<FontSize>('Medium');
-  const [subject, setSubject]                 = useState('');
-  const [message, setMessage]                 = useState('');
-  const [submitting, setSubmitting]           = useState(false);
+  const [travelTips, setTravelTips] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
+  const [fontSize, setFontSize] = useState<FontSize>("Medium");
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const getInitials = () => {
-    if (!name.trim()) return '?';
-    return name.trim().split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    if (!name.trim()) return "?";
+    return name
+      .trim()
+      .split(" ")
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   const validateEmail = (val: string) => {
     setEmail(val);
     const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
-    setEmailError(valid || val === '' ? '' : 'Enter a valid email address');
+    setEmailError(valid || val === "" ? "" : "Enter a valid email address");
   };
 
   const handleSubmitFeedback = async () => {
     if (!subject.trim() || !message.trim()) {
-      Alert.alert('Missing Fields', 'Please fill in both Subject and Message.');
+      Alert.alert("Missing Fields", "Please fill in both Subject and Message.");
       return;
     }
     setSubmitting(true);
     try {
       await fetch(`${API_URL}/api/schedules/feedback`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ subject, message, userType }),
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject, message, userType }),
       });
-      setSubject('');
-      setMessage('');
-      Alert.alert('Thank you!', 'Your feedback has been submitted.');
+      setSubject("");
+      setMessage("");
+      Alert.alert("Thank you!", "Your feedback has been submitted.");
     } catch {
       // Offline fallback
-      Alert.alert('Saved Offline', 'Feedback will be submitted when you are back online.');
+      Alert.alert(
+        "Saved Offline",
+        "Feedback will be submitted when you are back online.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -122,32 +151,36 @@ export default function ProfileScreen() {
 
   const handleDeleteData = () => {
     Alert.alert(
-      'Delete Downloaded Content',
-      'This will remove all offline maps and cached data. Are you sure?',
+      "Delete Downloaded Content",
+      "This will remove all offline maps and cached data. Are you sure?",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text:    'Delete',
-          style:   'destructive',
-          onPress: () => Alert.alert('Done', 'All downloaded content removed.'),
+          text: "Delete",
+          style: "destructive",
+          onPress: () => Alert.alert("Done", "All downloaded content removed."),
         },
-      ]
+      ],
     );
   };
 
   const handleLogout = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: () => {} },
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Sign Out", style: "destructive", onPress: () => {} },
     ]);
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.bgSecondary} />
 
       {/* ── Header ── */}
-      <View style={styles.header}>
+      <ImageBackground
+        source={require("../../assets/bg_homescreen.png")}
+        style={styles.header}
+        resizeMode="cover"
+      >
         <View>
           <Text style={styles.headerTitle}>Profile & Settings</Text>
           <Text style={styles.headerSubtitle}>
@@ -157,29 +190,44 @@ export default function ProfileScreen() {
         <TouchableOpacity style={styles.headerBtn}>
           <Ionicons name="settings-outline" size={18} color="#fff" />
         </TouchableOpacity>
-      </View>
+      </ImageBackground>
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       >
-
         {/* ════ ACCOUNT ════ */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Account</Text>
           <View style={styles.card}>
-
             {/* Avatar Row */}
             <View style={styles.avatarRow}>
-              <View style={[styles.avatarCircle, { backgroundColor: USER_TYPE_COLORS[userType] }]}>
+              <View
+                style={[
+                  styles.avatarCircle,
+                  { backgroundColor: USER_TYPE_COLORS[userType] },
+                ]}
+              >
                 <Text style={styles.avatarInitials}>{getInitials()}</Text>
               </View>
               <View style={styles.avatarInfo}>
-                <Text style={styles.avatarName}>{name || 'Enter your name'}</Text>
+                <Text style={styles.avatarName}>
+                  {name || "Enter your name"}
+                </Text>
                 <Text style={styles.avatarEmail}>{email}</Text>
-                <View style={[styles.avatarBadge, { backgroundColor: `${USER_TYPE_COLORS[userType]}20` }]}>
-                  <Text style={[styles.avatarBadgeText, { color: USER_TYPE_COLORS[userType] }]}>
+                <View
+                  style={[
+                    styles.avatarBadge,
+                    { backgroundColor: `${USER_TYPE_COLORS[userType]}20` },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.avatarBadgeText,
+                      { color: USER_TYPE_COLORS[userType] },
+                    ]}
+                  >
                     {userType}
                   </Text>
                 </View>
@@ -202,7 +250,10 @@ export default function ProfileScreen() {
             <View style={styles.fieldRow}>
               <Text style={styles.fieldLabel}>Email</Text>
               <TextInput
-                style={[styles.fieldInput, emailError ? styles.fieldInputError : null]}
+                style={[
+                  styles.fieldInput,
+                  emailError ? styles.fieldInputError : null,
+                ]}
                 placeholder="name@example.com"
                 placeholderTextColor={Colors.slateLight}
                 value={email}
@@ -210,7 +261,9 @@ export default function ProfileScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
-              {!!emailError && <Text style={styles.fieldError}>{emailError}</Text>}
+              {!!emailError && (
+                <Text style={styles.fieldError}>{emailError}</Text>
+              )}
             </View>
 
             {/* User Type */}
@@ -218,31 +271,54 @@ export default function ProfileScreen() {
               <Text style={styles.fieldLabel}>User Type</Text>
               <TouchableOpacity
                 style={styles.fieldDropdown}
-                onPress={() => setShowTypeMenu(v => !v)}
+                onPress={() => setShowTypeMenu((v) => !v)}
               >
-                <View style={[styles.userTypeBadge, { backgroundColor: USER_TYPE_COLORS[userType] }]}>
+                <View
+                  style={[
+                    styles.userTypeBadge,
+                    { backgroundColor: USER_TYPE_COLORS[userType] },
+                  ]}
+                >
                   <Text style={styles.userTypeBadgeText}>{userType}</Text>
                 </View>
                 <Ionicons
-                  name={showTypeMenu ? 'chevron-up' : 'chevron-down'}
+                  name={showTypeMenu ? "chevron-up" : "chevron-down"}
                   size={18}
                   color={Colors.slate}
                 />
               </TouchableOpacity>
               {showTypeMenu && (
                 <View style={{ marginTop: 10, gap: 6 }}>
-                  {USER_TYPES.map(t => (
+                  {USER_TYPES.map((t) => (
                     <TouchableOpacity
                       key={t}
-                      onPress={() => { setUserType(t); setShowTypeMenu(false); }}
-                      style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 }}
+                      onPress={() => {
+                        setUserType(t);
+                        setShowTypeMenu(false);
+                      }}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 8,
+                        paddingVertical: 5,
+                      }}
                     >
-                      <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: USER_TYPE_COLORS[t] }} />
-                      <Text style={{
-                        fontSize:   14,
-                        color:      userType === t ? USER_TYPE_COLORS[t] : Colors.navy,
-                        fontWeight: userType === t ? '700' : '500',
-                      }}>
+                      <View
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: 5,
+                          backgroundColor: USER_TYPE_COLORS[t],
+                        }}
+                      />
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          color:
+                            userType === t ? USER_TYPE_COLORS[t] : Colors.navy,
+                          fontWeight: userType === t ? "700" : "500",
+                        }}
+                      >
                         {t}
                       </Text>
                     </TouchableOpacity>
@@ -253,9 +329,14 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.permNote}>
-            <Ionicons name="information-circle-outline" size={14} color="#92400E" />
+            <Ionicons
+              name="information-circle-outline"
+              size={14}
+              color="#92400E"
+            />
             <Text style={styles.permNoteText}>
-              Personalization for Tourists, Students, New Residents, locals, and OFWs.
+              Personalization for Tourists, Students, New Residents, locals, and
+              OFWs.
             </Text>
           </View>
         </View>
@@ -264,18 +345,35 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Connectivity</Text>
           <View style={styles.card}>
-            <ToggleRow icon="cloud-download-outline" title="Enable Offline Maps & Data"
+            <ToggleRow
+              icon="cloud-download-outline"
+              title="Enable Offline Maps & Data"
               subtitle="Download routes, maps, and schedules for offline use"
-              value={offlineMaps} onToggle={() => setOfflineMaps(v => !v)} />
-            <ToggleRow icon="pricetag-outline" title="Fare Updates Alerts"
+              value={offlineMaps}
+              onToggle={() => setOfflineMaps((v) => !v)}
+            />
+            <ToggleRow
+              icon="pricetag-outline"
+              title="Fare Updates Alerts"
               subtitle="Get notified when fares change"
-              value={fareAlerts} onToggle={() => setFareAlerts(v => !v)} />
-            <ToggleRow icon="calendar-outline" title="Schedule Changes"
+              value={fareAlerts}
+              onToggle={() => setFareAlerts((v) => !v)}
+            />
+            <ToggleRow
+              icon="calendar-outline"
+              title="Schedule Changes"
               subtitle="Receive adjustments and holiday notices"
-              value={scheduleChanges} onToggle={() => setScheduleChanges(v => !v)} />
-            <ToggleRow icon="bulb-outline" title="Travel Tips"
+              value={scheduleChanges}
+              onToggle={() => setScheduleChanges((v) => !v)}
+            />
+            <ToggleRow
+              icon="bulb-outline"
+              title="Travel Tips"
               subtitle="Helpful reminders for routes and safety"
-              value={travelTips} onToggle={() => setTravelTips(v => !v)} last />
+              value={travelTips}
+              onToggle={() => setTravelTips((v) => !v)}
+              last
+            />
           </View>
         </View>
 
@@ -283,20 +381,39 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Appearance</Text>
           <View style={styles.card}>
-            <ToggleRow icon="moon-outline" title="Dark Mode"
+            <ToggleRow
+              icon="moon-outline"
+              title="Dark Mode"
               subtitle="Reduce glare and save battery"
               value={darkMode}
-              onToggle={() => { setDarkMode(v => !v); Alert.alert('Dark Mode', 'Coming soon!'); }} />
-            <View style={[styles.fontSizeRow, { borderTopWidth: 1, borderTopColor: Colors.borderLight }]}>
+              onToggle={() => {
+                setDarkMode((v) => !v);
+                Alert.alert("Dark Mode", "Coming soon!");
+              }}
+            />
+            <View
+              style={[
+                styles.fontSizeRow,
+                { borderTopWidth: 1, borderTopColor: Colors.borderLight },
+              ]}
+            >
               <Text style={styles.fontSizeLabel}>Font Size</Text>
               <View style={styles.fontSizeBtns}>
-                {(['Small', 'Medium', 'Large'] as FontSize[]).map(f => (
+                {(["Small", "Medium", "Large"] as FontSize[]).map((f) => (
                   <TouchableOpacity
                     key={f}
-                    style={[styles.fontSizeBtn, fontSize === f && styles.fontSizeBtnActive]}
+                    style={[
+                      styles.fontSizeBtn,
+                      fontSize === f && styles.fontSizeBtnActive,
+                    ]}
                     onPress={() => setFontSize(f)}
                   >
-                    <Text style={[styles.fontSizeBtnText, fontSize === f && styles.fontSizeBtnTextActive]}>
+                    <Text
+                      style={[
+                        styles.fontSizeBtnText,
+                        fontSize === f && styles.fontSizeBtnTextActive,
+                      ]}
+                    >
                       {f}
                     </Text>
                   </TouchableOpacity>
@@ -336,12 +453,12 @@ export default function ProfileScreen() {
         {/* Social Icons */}
         <View style={styles.socialRow}>
           {[
-            { icon: 'logo-facebook' as const, color: '#1877F2' },
-            { icon: 'logo-twitter'  as const, color: '#1DA1F2' },
-            { icon: 'logo-instagram' as const, color: '#E1306C' },
-            { icon: 'logo-youtube'  as const, color: '#FF0000' },
-            { icon: 'logo-tiktok'   as const, color: '#010101' },
-          ].map(s => (
+            { icon: "logo-facebook" as const, color: "#1877F2" },
+            { icon: "logo-twitter" as const, color: "#1DA1F2" },
+            { icon: "logo-instagram" as const, color: "#E1306C" },
+            { icon: "logo-youtube" as const, color: "#FF0000" },
+            { icon: "logo-tiktok" as const, color: "#010101" },
+          ].map((s) => (
             <TouchableOpacity
               key={s.icon}
               style={[styles.socialBtn, { backgroundColor: `${s.color}15` }]}
@@ -357,7 +474,7 @@ export default function ProfileScreen() {
           disabled={submitting}
         >
           <Text style={styles.submitBtnText}>
-            {submitting ? 'Submitting...' : 'Submit'}
+            {submitting ? "Submitting..." : "Submit"}
           </Text>
         </TouchableOpacity>
 
@@ -366,13 +483,39 @@ export default function ProfileScreen() {
           <Text style={styles.sectionLabel}>App Info</Text>
           <View style={styles.card}>
             {[
-              { icon: 'information-circle-outline' as const, title: 'Version 1.0',        subtitle: 'CebuCommute — Build 2025.08' },
-              { icon: 'sync-outline'               as const, title: 'Last Data Update',   subtitle: 'Aug 2025' },
-              { icon: 'sparkles-outline'           as const, title: 'AI Powered by Groq', subtitle: 'Llama 3 — Free tier' },
-              { icon: 'map-outline'                as const, title: 'Maps',               subtitle: 'Google Maps + AI-generated GeoJSON routes' },
-              { icon: 'alert-circle-outline'       as const, title: 'Limitations',        subtitle: 'No real-time tracking.' },
+              {
+                icon: "information-circle-outline" as const,
+                title: "Version 1.0",
+                subtitle: "CebuCommute — Build 2025.08",
+              },
+              {
+                icon: "sync-outline" as const,
+                title: "Last Data Update",
+                subtitle: "Aug 2025",
+              },
+              {
+                icon: "sparkles-outline" as const,
+                title: "AI Powered by Groq",
+                subtitle: "Llama 3 — Free tier",
+              },
+              {
+                icon: "map-outline" as const,
+                title: "Maps",
+                subtitle: "Google Maps + AI-generated GeoJSON routes",
+              },
+              {
+                icon: "alert-circle-outline" as const,
+                title: "Limitations",
+                subtitle: "No real-time tracking.",
+              },
             ].map((item, i, arr) => (
-              <View key={i} style={[styles.infoRow, i === arr.length - 1 && { borderBottomWidth: 0 }]}>
+              <View
+                key={i}
+                style={[
+                  styles.infoRow,
+                  i === arr.length - 1 && { borderBottomWidth: 0 },
+                ]}
+              >
                 <View style={styles.infoIcon}>
                   <Ionicons name={item.icon} size={18} color={Colors.teal} />
                 </View>
@@ -391,23 +534,42 @@ export default function ProfileScreen() {
           <View style={styles.card}>
             <TouchableOpacity
               style={styles.actionRow}
-              onPress={() => Alert.alert('Login / Sign Up', 'Auth flow coming soon!')}
+              onPress={() =>
+                Alert.alert("Login / Sign Up", "Auth flow coming soon!")
+              }
             >
-              <View style={[styles.actionIcon, { backgroundColor: `${Colors.teal}15` }]}>
-                <Ionicons name="person-add-outline" size={18} color={Colors.teal} />
+              <View
+                style={[
+                  styles.actionIcon,
+                  { backgroundColor: `${Colors.teal}15` },
+                ]}
+              >
+                <Ionicons
+                  name="person-add-outline"
+                  size={18}
+                  color={Colors.teal}
+                />
               </View>
-              <Text style={[styles.actionText, { color: Colors.teal }]}>Login / Sign Up</Text>
+              <Text style={[styles.actionText, { color: Colors.teal }]}>
+                Login / Sign Up
+              </Text>
               <Ionicons name="chevron-forward" size={18} color={Colors.slate} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.actionRow} onPress={handleDeleteData}>
-              <View style={[styles.actionIcon, { backgroundColor: '#FEF2F2' }]}>
+            <TouchableOpacity
+              style={styles.actionRow}
+              onPress={handleDeleteData}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: "#FEF2F2" }]}>
                 <Ionicons name="trash-outline" size={18} color={Colors.error} />
               </View>
               <Text style={[styles.actionText, { color: Colors.navy }]}>
                 Delete Downloaded Content
               </Text>
-              <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteData}>
+              <TouchableOpacity
+                style={styles.deleteBtn}
+                onPress={handleDeleteData}
+              >
                 <Text style={styles.deleteBtnText}>Delete</Text>
               </TouchableOpacity>
             </TouchableOpacity>
@@ -416,15 +578,20 @@ export default function ProfileScreen() {
               style={[styles.actionRow, { borderBottomWidth: 0 }]}
               onPress={handleLogout}
             >
-              <View style={[styles.actionIcon, { backgroundColor: '#FEF2F2' }]}>
-                <Ionicons name="log-out-outline" size={18} color={Colors.error} />
+              <View style={[styles.actionIcon, { backgroundColor: "#FEF2F2" }]}>
+                <Ionicons
+                  name="log-out-outline"
+                  size={18}
+                  color={Colors.error}
+                />
               </View>
-              <Text style={[styles.actionText, { color: Colors.error }]}>Logout</Text>
+              <Text style={[styles.actionText, { color: Colors.error }]}>
+                Logout
+              </Text>
               <Ionicons name="chevron-forward" size={18} color={Colors.slate} />
             </TouchableOpacity>
           </View>
         </View>
-
       </ScrollView>
     </SafeAreaView>
   );
