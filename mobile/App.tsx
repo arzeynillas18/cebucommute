@@ -21,6 +21,7 @@ import HomeScreen from "./src/screens/HomeScreen";
 import MapScreen from "./src/screens/MapScreen";
 import SchedulesScreen from "./src/screens/SchedulesScreen";
 import ProfileScreen from "./src/screens/ProfileScreen";
+import { AppProvider } from "./src/context/AppContext";
 
 // ─── Navigators ───────────────────────────────────────────────────────────────
 
@@ -105,16 +106,18 @@ function MainTabs() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
-        <Stack.Navigator
-          initialRouteName="Splash"
-          screenOptions={{ headerShown: false, gestureEnabled: false }}
-        >
-          <Stack.Screen name="Splash" component={SplashScreen} />
-          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-          <Stack.Screen name="Main" component={MainTabs} />
-        </Stack.Navigator>
-      </NavigationContainer>
+      <AppProvider>
+        <NavigationContainer>
+          <Stack.Navigator
+            initialRouteName="Splash"
+            screenOptions={{ headerShown: false, gestureEnabled: false }}
+          >
+            <Stack.Screen name="Splash" component={SplashScreen} />
+            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+            <Stack.Screen name="Main" component={MainTabs} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </AppProvider>
     </SafeAreaProvider>
   );
 }

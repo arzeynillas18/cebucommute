@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://192.168.254.107:3000';
+const API_URL = 'http://192.168.0.113:3000';
 
 // ── Bump this version number any time db.json routes change ──
 // This forces all clients to discard stale cached data
-const CACHE_VERSION = '5';
+const CACHE_VERSION = '7';
 const CACHE_KEY     = `all_geojson_routes_v${CACHE_VERSION}`;
 
 // ── How close (meters) a route must pass to count as "nearby" ──

@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-
+import { useApp } from "../context/AppContext";
 import styles from "../styles/ProfileScreen.styles";
 import { Colors } from "../styles/theme";
 
@@ -101,10 +101,10 @@ export default function ProfileScreen() {
   const [scheduleChanges, setScheduleChanges] = useState(true);
   const [travelTips, setTravelTips] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
-  const [fontSize, setFontSize] = useState<FontSize>("Medium");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { lang, setLang, fontSize, setFontSize, t, fs } = useApp();
 
   const getInitials = () => {
     if (!name.trim()) return "?";
@@ -182,9 +182,14 @@ export default function ProfileScreen() {
         resizeMode="cover"
       >
         <View>
-          <Text style={styles.headerTitle}>Profile & Settings</Text>
-          <Text style={styles.headerSubtitle}>
-            Some settings require Internet. Offline features available.
+          <Text style={[styles.headerTitle, { fontSize: fs(22) }]}>
+            {t("Profile & Settings", "Profile at Mga Setting")}
+          </Text>
+          <Text style={[styles.headerSubtitle, { fontSize: fs(12) }]}>
+            {t(
+              "Some settings require Internet. Offline features available.",
+              "Ang ilang setting ay nangangailangan ng Internet. Available ang offline features.",
+            )}
           </Text>
         </View>
         <TouchableOpacity style={styles.headerBtn}>
@@ -199,7 +204,9 @@ export default function ProfileScreen() {
       >
         {/* ════ ACCOUNT ════ */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Account</Text>
+          <Text style={[styles.sectionLabel, { fontSize: fs(12) }]}>
+            {t("Account", "Account")}
+          </Text>
           <View style={styles.card}>
             {/* Avatar Row */}
             <View style={styles.avatarRow}>
@@ -343,33 +350,53 @@ export default function ProfileScreen() {
 
         {/* ════ CONNECTIVITY ════ */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Connectivity</Text>
+          <Text style={[styles.sectionLabel, { fontSize: fs(12) }]}>
+            {t("Connectivity", "Koneksyon")}
+          </Text>
           <View style={styles.card}>
             <ToggleRow
               icon="cloud-download-outline"
-              title="Enable Offline Maps & Data"
-              subtitle="Download routes, maps, and schedules for offline use"
+              title={t(
+                "Enable Offline Maps & Data",
+                "I-enable ang Offline Maps at Data",
+              )}
+              subtitle={t(
+                "Download routes, maps, and schedules for offline use",
+                "I-download ang mga ruta, mapa, at iskedyul para sa offline",
+              )}
               value={offlineMaps}
               onToggle={() => setOfflineMaps((v) => !v)}
             />
             <ToggleRow
               icon="pricetag-outline"
-              title="Fare Updates Alerts"
-              subtitle="Get notified when fares change"
+              title={t(
+                "Fare Updates Alerts",
+                "Mga Alerto sa Pagbabago ng Pamasahe",
+              )}
+              subtitle={t(
+                "Get notified when fares change",
+                "Maabisuhan kapag nagbago ang pamasahe",
+              )}
               value={fareAlerts}
               onToggle={() => setFareAlerts((v) => !v)}
             />
             <ToggleRow
               icon="calendar-outline"
-              title="Schedule Changes"
-              subtitle="Receive adjustments and holiday notices"
+              title={t("Schedule Changes", "Mga Pagbabago sa Iskedyul")}
+              subtitle={t(
+                "Receive adjustments and holiday notices",
+                "Tumanggap ng mga abiso sa holiday",
+              )}
               value={scheduleChanges}
               onToggle={() => setScheduleChanges((v) => !v)}
             />
             <ToggleRow
               icon="bulb-outline"
-              title="Travel Tips"
-              subtitle="Helpful reminders for routes and safety"
+              title={t("Travel Tips", "Mga Tips sa Pagbiyahe")}
+              subtitle={t(
+                "Helpful reminders for routes and safety",
+                "Mga paalala para sa ruta at kaligtasan",
+              )}
               value={travelTips}
               onToggle={() => setTravelTips((v) => !v)}
               last
@@ -379,17 +406,20 @@ export default function ProfileScreen() {
 
         {/* ════ APPEARANCE ════ */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Appearance</Text>
+          <Text style={[styles.sectionLabel, { fontSize: fs(12) }]}>
+            {t("Appearance", "Hitsura")}
+          </Text>
           <View style={styles.card}>
             <ToggleRow
-              icon="moon-outline"
-              title="Dark Mode"
-              subtitle="Reduce glare and save battery"
-              value={darkMode}
-              onToggle={() => {
-                setDarkMode((v) => !v);
-                Alert.alert("Dark Mode", "Coming soon!");
-              }}
+              icon="language-outline"
+              title={t("Language: English", "Wika: Filipino")}
+              subtitle={t(
+                "Tap to switch to Filipino",
+                "I-tap para lumipat sa English",
+              )}
+              value={lang === "fil"}
+              onToggle={() => setLang(lang === "en" ? "fil" : "en")}
+              last
             />
             <View
               style={[
@@ -397,7 +427,9 @@ export default function ProfileScreen() {
                 { borderTopWidth: 1, borderTopColor: Colors.borderLight },
               ]}
             >
-              <Text style={styles.fontSizeLabel}>Font Size</Text>
+              <Text style={[styles.fontSizeLabel, { fontSize: fs(13) }]}>
+                {t("Font Size", "Laki ng Teksto")}
+              </Text>
               <View style={styles.fontSizeBtns}>
                 {(["Small", "Medium", "Large"] as FontSize[]).map((f) => (
                   <TouchableOpacity
@@ -425,7 +457,9 @@ export default function ProfileScreen() {
 
         {/* ════ FEEDBACK ════ */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Feedback</Text>
+          <Text style={[styles.sectionLabel, { fontSize: fs(12) }]}>
+            {t("Feedback", "Puna")}
+          </Text>
           <View style={styles.card}>
             <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
               <Text style={styles.fieldLabel}>Subject</Text>
@@ -480,7 +514,9 @@ export default function ProfileScreen() {
 
         {/* ════ APP INFO ════ */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>App Info</Text>
+          <Text style={[styles.sectionLabel, { fontSize: fs(12) }]}>
+            {t("App Info", "Impormasyon ng App")}
+          </Text>
           <View style={styles.card}>
             {[
               {
@@ -530,7 +566,9 @@ export default function ProfileScreen() {
 
         {/* ════ ACCOUNT ACTIONS ════ */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Account Actions</Text>
+          <Text style={[styles.sectionLabel, { fontSize: fs(12) }]}>
+            {t("Account Actions", "Mga Aksyon sa Account")}
+          </Text>
           <View style={styles.card}>
             <TouchableOpacity
               style={styles.actionRow}
@@ -550,8 +588,13 @@ export default function ProfileScreen() {
                   color={Colors.teal}
                 />
               </View>
-              <Text style={[styles.actionText, { color: Colors.teal }]}>
-                Login / Sign Up
+              <Text
+                style={[
+                  styles.actionText,
+                  { color: Colors.teal, fontSize: fs(14) },
+                ]}
+              >
+                {t("Login / Sign Up", "Mag-login / Mag-sign up")}
               </Text>
               <Ionicons name="chevron-forward" size={18} color={Colors.slate} />
             </TouchableOpacity>
@@ -563,8 +606,16 @@ export default function ProfileScreen() {
               <View style={[styles.actionIcon, { backgroundColor: "#FEF2F2" }]}>
                 <Ionicons name="trash-outline" size={18} color={Colors.error} />
               </View>
-              <Text style={[styles.actionText, { color: Colors.navy }]}>
-                Delete Downloaded Content
+              <Text
+                style={[
+                  styles.actionText,
+                  { color: Colors.navy, fontSize: fs(14) },
+                ]}
+              >
+                {t(
+                  "Delete Downloaded Content",
+                  "Burahin ang Na-download na Content",
+                )}
               </Text>
               <TouchableOpacity
                 style={styles.deleteBtn}
@@ -585,8 +636,13 @@ export default function ProfileScreen() {
                   color={Colors.error}
                 />
               </View>
-              <Text style={[styles.actionText, { color: Colors.error }]}>
-                Logout
+              <Text
+                style={[
+                  styles.actionText,
+                  { color: Colors.error, fontSize: fs(14) },
+                ]}
+              >
+                {t("Logout", "Mag-logout")}
               </Text>
               <Ionicons name="chevron-forward" size={18} color={Colors.slate} />
             </TouchableOpacity>

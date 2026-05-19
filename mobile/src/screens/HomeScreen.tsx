@@ -16,14 +16,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import MapView, { Polyline, PROVIDER_GOOGLE } from "react-native-maps";
-
+import { useApp } from "../context/AppContext";
 import { Colors } from "../styles/theme";
 import { JEEPNEY_ROUTES, JeepneyRoute } from "../constants/routes";
 import type { TabParamList } from "../types/navigation";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
 import { useGeoJSON } from "../hooks/useGeoJSON";
 
-const API_URL = "http://192.168.254.107:3000";
+const API_URL = "http://192.168.0.113:3000";
 
 type NavProp = BottomTabNavigationProp<TabParamList>;
 
@@ -315,7 +315,7 @@ export default function HomeScreen() {
   const navigation = useNavigation<NavProp>();
   const { isOnline } = useNetworkStatus();
   const { geoJsonMap } = useGeoJSON();
-
+  const { t, fs } = useApp();
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [activeFilter, setActiveFilter] = useState<"shortest" | "cheapest">(
@@ -522,8 +522,8 @@ export default function HomeScreen() {
             >
               {greeting}
             </Text>
-            <Text style={{ fontSize: 14, color: "#64748B" }}>
-              Where are you going today?
+            <Text style={{ fontSize: fs(14), color: "#64748B" }}>
+              {t("Where are you going today?", "Saan ka pupunta ngayon?")}
             </Text>
           </View>
         </ImageBackground>
@@ -586,13 +586,13 @@ export default function HomeScreen() {
             <View style={{ flex: 1 }}>
               <Text
                 style={{
-                  fontSize: 11,
+                  fontSize: fs(11),
                   color: Colors.teal,
                   fontWeight: "700",
                   marginBottom: 2,
                 }}
               >
-                From
+                {t("From", "Mula")}
               </Text>
               <TextInput
                 style={{
@@ -646,13 +646,13 @@ export default function HomeScreen() {
             <View style={{ flex: 1 }}>
               <Text
                 style={{
-                  fontSize: 11,
+                  fontSize: fs(11),
                   color: "#EF4444",
                   fontWeight: "700",
                   marginBottom: 2,
                 }}
               >
-                To
+                {t("To", "Patungo")}
               </Text>
               <TextInput
                 style={{
@@ -733,9 +733,16 @@ export default function HomeScreen() {
                   <Text style={{ fontSize: 22 }}>✨</Text>
                   <View>
                     <Text
-                      style={{ fontSize: 16, fontWeight: "800", color: "#fff" }}
+                      style={{
+                        fontSize: fs(16),
+                        fontWeight: "800",
+                        color: "#fff",
+                      }}
                     >
-                      Find Smartest Route
+                      {t(
+                        "Find Smartest Route",
+                        "Hanapin ang Pinakamahusay na Ruta",
+                      )}
                     </Text>
                     <Text
                       style={{
@@ -775,8 +782,10 @@ export default function HomeScreen() {
               marginBottom: 12,
             }}
           >
-            <Text style={{ fontSize: 16, fontWeight: "800", color: "#0F172A" }}>
-              Quick Access
+            <Text
+              style={{ fontSize: fs(16), fontWeight: "800", color: "#0F172A" }}
+            >
+              {t("Quick Access", "Mabilis na Access")}
             </Text>
             <TouchableOpacity>
               <Text
@@ -933,10 +942,10 @@ export default function HomeScreen() {
               marginBottom: 12,
             }}
           >
-            <Text style={{ fontSize: 16, fontWeight: "800", color: "#0F172A" }}>
-              {aiRoutes.length > 0
-                ? "🤖 AI Suggested Routes"
-                : "Suggested Routes"}
+            <Text
+              style={{ fontSize: fs(16), fontWeight: "800", color: "#0F172A" }}
+            >
+              {t("Suggested Routes", "Mga Iminungkahing Ruta")}
             </Text>
             <View style={{ flexDirection: "row", gap: 8 }}>
               {(["shortest", "cheapest"] as const).map((f) => (

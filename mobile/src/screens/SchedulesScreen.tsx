@@ -15,7 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
-
+import { useApp } from "../context/AppContext";
 import styles from "../styles/SchedulesScreen.styles";
 import { Colors } from "../styles/theme";
 import { JEEPNEY_ROUTES, JeepneyRoute } from "../constants/routes";
@@ -40,11 +40,15 @@ const ScheduleCard = ({
   isOpen,
   onToggle,
   onViewMap,
+  t,
+  fs,
 }: {
   route: JeepneyRoute;
   isOpen: boolean;
   onToggle: () => void;
   onViewMap: () => void;
+  t: (en: string, fil: string) => string;
+  fs: (base: number) => number;
 }) => (
   <View style={[styles.scheduleCard, { borderLeftColor: route.color }]}>
     {/* Header */}
@@ -57,10 +61,12 @@ const ScheduleCard = ({
         <Text style={styles.cardBadgeText}>{route.code}</Text>
       </View>
       <View style={styles.cardHeaderInfo}>
-        <Text style={styles.cardTitle}>
-          {route.origin} - {route.dest}
+        <Text style={[styles.cardTitle, { fontSize: fs(14) }]}>
+          {route.origin} → {route.dest}
         </Text>
-        <Text style={styles.cardHours}>Operating Hours: {route.hours}</Text>
+        <Text style={[styles.cardHours, { fontSize: fs(12) }]}>
+          ⏱ {t("Operating Hours", "Oras ng Operasyon")}: {route.hours}
+        </Text>
       </View>
       <View style={styles.cardChevron}>
         <Ionicons
@@ -74,7 +80,9 @@ const ScheduleCard = ({
     {/* Body */}
     {isOpen && (
       <View style={styles.cardBody}>
-        <Text style={styles.cardFrequency}>Frequency: {route.frequency}</Text>
+        <Text style={[styles.cardFrequency, { fontSize: fs(12) }]}>
+          {t("Frequency", "Dalas")}: {route.frequency}
+        </Text>
 
         {[
           `First Trip: ${route.firstTrip}`,
@@ -98,7 +106,9 @@ const ScheduleCard = ({
         <View style={styles.cardActions}>
           <TouchableOpacity style={styles.cardActionBtn} onPress={onViewMap}>
             <Ionicons name="map-outline" size={16} color="#fff" />
-            <Text style={styles.cardActionText}>View on Map</Text>
+            <Text style={[styles.cardActionText, { fontSize: fs(12) }]}>
+              {t("View on Map", "Tingnan sa Mapa")}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -110,7 +120,7 @@ const ScheduleCard = ({
 
 export default function SchedulesScreen() {
   const navigation = useNavigation<NavProp>();
-
+  const { t, fs } = useApp();
   const [search, setSearch] = useState("");
   const [area, setArea] = useState<AreaFilter>("All");
   const [sort, setSort] = useState<SortMode>("code");
@@ -166,9 +176,14 @@ export default function SchedulesScreen() {
         resizeMode="cover"
       >
         <View>
-          <Text style={styles.headerTitle}>Jeepney Schedules</Text>
-          <Text style={{ fontSize: 13, color: Colors.slate, marginTop: 2 }}>
-            View routes and operating hours
+          <Text style={[styles.headerTitle, { fontSize: fs(22) }]}>
+            {t("Jeepney Schedules", "Mga Iskedyul ng Dyipni")}
+          </Text>
+          <Text style={{ fontSize: fs(13), color: Colors.slate, marginTop: 2 }}>
+            {t(
+              "View routes and operating hours",
+              "Tingnan ang mga ruta at oras ng operasyon",
+            )}
           </Text>
         </View>
         <TouchableOpacity style={styles.headerBtn}>
@@ -187,7 +202,10 @@ export default function SchedulesScreen() {
             <Ionicons name="search-outline" size={18} color={Colors.teal} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search by Route Code (e.g., 01B)"
+              placeholder={t(
+                "Search by Route Code (e.g., 01B)",
+                "Maghanap ng Ruta (hal. 01B)",
+              )}
               placeholderTextColor={Colors.slateLight}
               value={search}
               onChangeText={setSearch}
@@ -209,13 +227,18 @@ export default function SchedulesScreen() {
         <View style={styles.filterRow}>
           <TouchableOpacity style={styles.filterBtn} onPress={cycleSort}>
             <Ionicons name="swap-vertical-outline" size={14} color="#fff" />
-            <Text style={styles.filterBtnText}>
-              Sort: {sort === "code" ? "Route Code" : "Name"}
+            <Text style={[styles.filterBtnText, { fontSize: fs(12) }]}>
+              {t("Sort", "Ayusin")}:{" "}
+              {sort === "code"
+                ? t("Route Code", "Kodigo")
+                : t("Name", "Pangalan")}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.filterBtn} onPress={cycleArea}>
             <Ionicons name="location-outline" size={14} color="#fff" />
-            <Text style={styles.filterBtnText}>Area: {area}</Text>
+            <Text style={[styles.filterBtnText, { fontSize: fs(12) }]}>
+              {t("Area", "Lugar")}: {area}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -230,6 +253,8 @@ export default function SchedulesScreen() {
               onViewMap={() =>
                 navigation.navigate("Maps", { routeCode: route.code })
               }
+              t={t}
+              fs={fs}
             />
           ))
         ) : (
@@ -245,11 +270,12 @@ export default function SchedulesScreen() {
 
         {/* ── Footer ── */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            Data available offline; last Sync:{" "}
+          <Text style={[styles.footerText, { fontSize: fs(11) }]}>
+            {t(
+              "Schedules are for reference only. Fares and hours may vary.\nVerify with drivers or LTFRB for current rates.\nData available offline · Last sync: ",
+              "Ang mga iskedyul ay para sa sanggunian lamang. Maaaring mag-iba ang pamasahe at oras.\nI-verify sa mga driver o LTFRB.\nAvailable offline · Huling sync: ",
+            )}
             <Text style={styles.footerBold}>Aug 2025</Text>
-            {"\n"}Schedules based on LTFRB data and field verification.
-            {"\n"}No real-time tracking.
           </Text>
         </View>
       </ScrollView>

@@ -243,9 +243,9 @@ export default function MapScreen() {
     ayala: { latitude: 10.3188, longitude: 123.9054 },
     "ayala center": { latitude: 10.3188, longitude: 123.9054 },
     "ayala center cebu": { latitude: 10.3188, longitude: 123.9054 },
-    "sm city cebu": { latitude: 10.331, longitude: 123.9182 },
-    "sm city": { latitude: 10.331, longitude: 123.9182 },
-    sm: { latitude: 10.331, longitude: 123.9182 },
+    "sm city cebu": { latitude: 10.3128, longitude: 123.9157 },
+    "sm city": { latitude: 10.3128, longitude: 123.9157 },
+    sm: { latitude: 10.3128, longitude: 123.9157 },
     parkmall: { latitude: 10.3279, longitude: 123.9375 },
     "it park": { latitude: 10.331, longitude: 123.906 },
     urgello: { latitude: 10.295, longitude: 123.891 },
@@ -339,7 +339,7 @@ export default function MapScreen() {
         style={StyleSheet.absoluteFillObject}
         provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
         initialRegion={CEBU_REGION}
-        showsUserLocation={!!userLocation}
+        showsUserLocation={false}
         showsMyLocationButton={false}
         showsCompass={false}
         onTouchStart={() => setShowPinch(false)}
@@ -387,18 +387,64 @@ export default function MapScreen() {
           );
         })}
         {userLocation && (
-          <Marker coordinate={userLocation} title="You are here">
-            <View
-              style={{
-                width: 20,
-                height: 20,
-                borderRadius: 10,
-                backgroundColor: Colors.info,
-                borderWidth: 3,
-                borderColor: "#fff",
-                elevation: 4,
-              }}
-            />
+          <Marker coordinate={userLocation} anchor={{ x: 0.5, y: 1 }}>
+            <View style={{ alignItems: "center" }}>
+              {/* Callout bubble */}
+              <View
+                style={{
+                  backgroundColor: Colors.teal,
+                  borderRadius: 8,
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  marginBottom: 4,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 4,
+                  elevation: 4,
+                }}
+              >
+                <Text
+                  style={{ color: "#fff", fontSize: 10, fontWeight: "700" }}
+                >
+                  My Location
+                </Text>
+              </View>
+              {/* Triangle pointer */}
+              <View
+                style={{
+                  width: 0,
+                  height: 0,
+                  borderLeftWidth: 5,
+                  borderRightWidth: 5,
+                  borderTopWidth: 6,
+                  borderLeftColor: "transparent",
+                  borderRightColor: "transparent",
+                  borderTopColor: Colors.teal,
+                  marginBottom: 2,
+                }}
+              />
+              {/* Person icon circle */}
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  backgroundColor: Colors.teal,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderWidth: 3,
+                  borderColor: "#fff",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 4,
+                  elevation: 5,
+                }}
+              >
+                <Ionicons name="person" size={18} color="#fff" />
+              </View>
+            </View>
           </Marker>
         )}
         {originPin && (
@@ -692,7 +738,7 @@ export default function MapScreen() {
             <View
               style={{
                 position: "absolute",
-                bottom: 80,
+                bottom: 110,
                 left: 16,
                 right: 16,
                 backgroundColor: "rgba(255,255,255,0.97)",
@@ -786,12 +832,13 @@ export default function MapScreen() {
         <View
           style={{
             position: "absolute",
-            bottom: selectedRoute ? 210 : 80,
+            bottom: selectedRoute ? 280 : 110,
             left: 16,
             right: 16,
             backgroundColor: "rgba(255,255,255,0.97)",
             borderRadius: 16,
             padding: 14,
+            maxHeight: 130,
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.15,
@@ -808,16 +855,23 @@ export default function MapScreen() {
           >
             <View style={{ flex: 1, flexDirection: "row", gap: 8 }}>
               <Ionicons name="sparkles-outline" size={16} color={Colors.teal} />
-              <Text
-                style={{
-                  fontSize: 13,
-                  color: Colors.navy,
-                  fontWeight: "600",
-                  flex: 1,
-                }}
+              <ScrollView
+                style={{ flex: 1 }}
+                showsVerticalScrollIndicator={false}
+                nestedScrollEnabled
               >
-                {routeInstruction}
-              </Text>
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: Colors.navy,
+                    fontWeight: "600",
+                  }}
+                  numberOfLines={3}
+                  ellipsizeMode="tail"
+                >
+                  {routeInstruction}
+                </Text>
+              </ScrollView>
             </View>
             <TouchableOpacity onPress={() => setRouteInstruction(null)}>
               <Ionicons name="close-circle" size={20} color={Colors.slate} />
@@ -831,7 +885,7 @@ export default function MapScreen() {
         <View
           style={{
             position: "absolute",
-            bottom: 80,
+            bottom: 100,
             left: 16,
             right: 16,
             backgroundColor: "rgba(255,255,255,0.97)",

@@ -11,7 +11,7 @@ export default function SplashScreen({ navigation }: Props) {
   useEffect(() => {
     const timer = setTimeout(() => {
       navigation.replace("Onboarding");
-    }, 3000);
+    }, 4000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -19,7 +19,7 @@ export default function SplashScreen({ navigation }: Props) {
     <View style={styles.container}>
       {/* GIF */}
       <Image
-        source={require("../../assets/splash.gif")}
+        source={require("../../assets/cebu_commute.gif")}
         style={styles.gif}
         resizeMode="contain"
       />
